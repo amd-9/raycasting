@@ -130,8 +130,8 @@ float normalizeAngle(float angle) {
     return angle;
 }
 
-float distanceBetweenPoints(float x1, float y1,float x2, float y2) {
-    return sqrt((x2 - x1)*(x2 - x1) + (y2 - y1)*(y2 - y1));
+float distanceBetweenPoints(float x1, float y1, float x2, float y2) {
+    return sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
 }
 
 void castRay(float rayAngle, int stripId) {
@@ -198,15 +198,15 @@ void castRay(float rayAngle, int stripId) {
     xintercept = isRayFacingRight ? TILE_SIZE : 0;
 
     // Find the y-coordinate of the closest vertical grid intersection
-    yintercept = player.y + (xintercept - player.x) / tan(rayAngle);
+    yintercept = player.y + (xintercept - player.x) * tan(rayAngle);
 
     // Calculate the increment xstep and ystep
     xstep = TILE_SIZE;
     xstep *= isRayFacingLeft ? -1 : 1;
 
-    ystep = TILE_SIZE / tan(rayAngle);
-    ystep *= (isRayFacingUp && xstep > 0) ? -1 : 1;
-    ystep *= (isRayFacingDown && xstep < 0) ? -1 : 1;
+    ystep = TILE_SIZE * tan(rayAngle);
+    ystep *= (isRayFacingUp && ystep > 0) ? -1 : 1;
+    ystep *= (isRayFacingDown && ystep < 0) ? -1 : 1;
 
     float nextVertTouchX = xintercept;
     float nextVertTouchY = yintercept;
@@ -217,8 +217,8 @@ void castRay(float rayAngle, int stripId) {
         float yToCheck = nextVertTouchY;
 
         if(mapHasWallAt(xToCheck, yToCheck)) {
-            vertWallHitX = nextHorzTouchX;
-            vertWallHitY = nextHorzTouchY;
+            vertWallHitX = nextVertTouchX;
+            vertWallHitY = nextVertTouchY;
             vertWallContent = map[(int)floor(yToCheck / TILE_SIZE)][(int)floor(xToCheck / TILE_SIZE)];
             foundVertWallHit = TRUE;
             break;
@@ -280,7 +280,7 @@ void castAllRays() {
 
     for (int stripId = 0; stripId < NUM_RAYS; stripId++) {
     	castRay(rayAngle, stripId);
-	rayAngle += FOV_ANGLE / NUM_RAYS;
+	    rayAngle += FOV_ANGLE / NUM_RAYS;
     }
 }
 
@@ -300,6 +300,19 @@ void renderMap() {
 	    };
 	    SDL_RenderFillRect(renderer, &mapTileRect);
 	}
+    }
+}
+
+void renderRays() {
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    for (int i = 0; i < 1; i++) {
+        SDL_RenderDrawLine(
+            renderer,
+            MINIMAP_SCALE_FACTOR * player.x,
+            MINIMAP_SCALE_FACTOR * player.y,
+            MINIMAP_SCALE_FACTOR * rays[i].wallHitX,
+            MINIMAP_SCALE_FACTOR * rays[i].wallHitY
+        );
     }
 }
 
@@ -357,7 +370,7 @@ void render() {
    SDL_RenderClear(renderer);
 
    renderMap();
-   //renderRays();
+   renderRays();
    renderPlayer();
     
    SDL_RenderPresent(renderer);
