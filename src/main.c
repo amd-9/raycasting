@@ -93,7 +93,7 @@ void setup() {
     player.height = 1;
     player.turnDirection = 0;
     player.walkDirection = 0;
-    player.rotationAngle = PI /2;
+    player.rotationAngle = PI / 2;
     player.walkSpeed = 100;
     player.turnSpeed = 45 * (PI / 180);
 }
@@ -154,7 +154,7 @@ void castRay(float rayAngle, int stripId) {
 
     // Find the y-coordinate of the closest horizontal grid intersection
     yintercept = floor(player.y / TILE_SIZE) * TILE_SIZE;
-    yintercept = isRayFacingDown ? TILE_SIZE : 0;
+    yintercept += isRayFacingDown ? TILE_SIZE : 0;
 
     // Find the x-coordinate of the closest horizontal grid intersection
     xintercept = player.x + (yintercept - player.y) / tan(rayAngle);
@@ -195,7 +195,7 @@ void castRay(float rayAngle, int stripId) {
 
     // Find the x-coordinate of the closest vertical grid intersection
     xintercept = floor(player.x / TILE_SIZE) * TILE_SIZE;
-    xintercept = isRayFacingRight ? TILE_SIZE : 0;
+    xintercept += isRayFacingRight ? TILE_SIZE : 0;
 
     // Find the y-coordinate of the closest vertical grid intersection
     yintercept = player.y + (xintercept - player.x) * tan(rayAngle);
@@ -305,7 +305,7 @@ void renderMap() {
 
 void renderRays() {
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < NUM_RAYS; i++) {
         SDL_RenderDrawLine(
             renderer,
             MINIMAP_SCALE_FACTOR * player.x,
