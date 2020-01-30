@@ -109,7 +109,7 @@ void setup() {
     // create an SDL Texture to display a colorbuffer
     colorBufferTexture = SDL_CreateTexture(
         renderer,
-        SDL_PIXELFORMAT_ABGR8888,
+        SDL_PIXELFORMAT_ARGB8888,
         SDL_TEXTUREACCESS_STREAMING,
         WINDOW_WIDTH,
         WINDOW_HEIGHT
@@ -118,7 +118,7 @@ void setup() {
     wallTexture = (Uint32*)malloc(sizeof(Uint32) * (Uint32)TEXTURE_WIDTH * (Uint32)TEXTURE_HEIGHT);
     for(int x = 0; x < TEXTURE_WIDTH; x++) {
         for(int y = 0; y < TEXTURE_HEIGHT; y++) {
-            wallTexture[(TEXTURE_WIDTH*y)+x] = (x % 8 && y  % 8) ? 0xFF0000FF : 0xFF000000; 
+            wallTexture[(TEXTURE_WIDTH*y)+x] = (x % 8 && y % 8) ? 0xFF0000FF : 0xFF000000; 
         }
     }
 
@@ -409,9 +409,22 @@ void generate3DProjection() {
         for (int y = 0; y < wallTopPixel; y++) {
             colorBuffer[(WINDOW_WIDTH * y) + i] = 0xFF333333;
         }
+
+        int textureOffsetX;
+        if (rays[i].wasHitVertical) {
+            textureOffsetX = (int)rays[i].wallHitY % TILE_SIZE;
+        } else {
+            textureOffsetX = (int)rays[i].wallHitX % TILE_SIZE;
+        }
+
         // render the wall from wallTopPixel to wallBottomPixel
         for (int y = wallTopPixel; y < wallBottomPixel; y++) {
-            colorBuffer[(WINDOW_WIDTH * y) + i] = rays[i].wasHitVertical ? 0xFFFFFF : 0xFFCCCC;
+            int distanceFromTop = y + (wallStripHeight / 2) - (WINDOW_HEIGHT / 2);
+            int textureOffsetY = distanceFromTop * ((float)TEXTURE_HEIGHT / wallStripHeight);
+
+            // set the color of the wall base on the color from the texture            
+            Uint32 texelColor = wallTexture[(TEXTURE_WIDTH * textureOffsetY) + textureOffsetX];
+            colorBuffer[(WINDOW_WIDTH * y) + i] = texelColor;
         }
         // set the color of the floor
         for (int y = wallBottomPixel; y < WINDOW_HEIGHT; y++) {
