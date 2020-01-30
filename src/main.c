@@ -2,7 +2,7 @@
 #include <limits.h>
 #include <SDL2/SDL.h>
 #include "constants.h"
-#include "textures.h"
+#include "upng.h"
 
 const int map[MAP_NUM_ROWS][MAP_NUM_COLS] = {
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ,1, 1, 1, 1, 1, 1, 1},
@@ -50,9 +50,10 @@ SDL_Renderer* renderer = NULL;
 int isGameRunning = FALSE;
 int ticksLastFrame = 0;
 
-Uint32* colorBuffer = NULL;
+uint32_t* colorBuffer = NULL;
 SDL_Texture* colorBufferTexture;
-Uint32* textures[NUM_TEXTURES];
+uint32_t* wallTexture;
+upng_t* pngTexture;
 
 int initializeWindow(){
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
@@ -86,6 +87,7 @@ int initializeWindow(){
 }
 
 void destroyWindow() {
+    free(wallTexture);
     free(colorBuffer);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
@@ -104,27 +106,24 @@ void setup() {
     player.turnSpeed = 45 * (PI / 180);
 
     // allocate the total amount of bytes in memory to hold our color
-    colorBuffer = (Uint32*)malloc(sizeof(Uint32) * (Uint32)WINDOW_WIDTH * (Uint32)WINDOW_HEIGHT);
+    colorBuffer = (uint32_t*)malloc(sizeof(uint32_t) * (uint32_t)WINDOW_WIDTH * (uint32_t)WINDOW_HEIGHT);
 
     // create an SDL Texture to display a colorbuffer
     colorBufferTexture = SDL_CreateTexture(
         renderer,
-        SDL_PIXELFORMAT_ARGB8888,
+        SDL_PIXELFORMAT_RGBA32,
         SDL_TEXTUREACCESS_STREAMING,
         WINDOW_WIDTH,
         WINDOW_HEIGHT
     );
 
-    // load some textures from textures.h
-    textures[0] = (Uint32*)REDBRICK_TEXTURE;
-    textures[1] = (Uint32*)PURPLESTONE_TEXTURE;
-    textures[2] = (Uint32*)MOSSYSTONE_TEXTURE;
-    textures[3] = (Uint32*)GRAYSTONE_TEXTURE;
-    textures[4] = (Uint32*)COLORSTONE_TEXTURE;
-    textures[5] = (Uint32*)BLUESTONE_TEXTURE;
-    textures[6] = (Uint32*)WOOD_TEXTURE;
-    textures[7] = (Uint32*)EAGLE_TEXTURE;
+    wallTexture = (uint32_t*)malloc(sizeof(uint32_t) * (uint32_t)TEXTURE_WIDTH * (uint32_t)TEXTURE_HEIGHT);
 
+    pngTexture = upng_new_from_file(PIKUMA_TEXTURE_FILEPATH);
+    if (pngTexture != NULL)
+        upng_decode(pngTexture);
+        if (upng_get_error(pngTexture) == UPNG_EOK)
+            wallTexture = (uint32_t*) upng_get_buffer(pngTexture);
 }
 
 int mapHasWallAt(float x, float y) {
@@ -429,7 +428,7 @@ void generate3DProjection() {
             int textureOffsetY = distanceFromTop * ((float)TEXTURE_HEIGHT / wallStripHeight);
 
             // set the color of the wall base on the color from the texture            
-            Uint32 texelColor = textures[texNum][(TEXTURE_WIDTH * textureOffsetY) + textureOffsetX];
+            uint32_t texelColor = wallTexture[(TEXTURE_WIDTH * textureOffsetY) + textureOffsetX];
             colorBuffer[(WINDOW_WIDTH * y) + i] = texelColor;
         }
         // set the color of the floor
@@ -439,7 +438,7 @@ void generate3DProjection() {
     }
 }
 
-void clearColorBuffer(Uint32 color) {
+void clearColorBuffer(uint32_t color) {
     for (int x = 0; x < WINDOW_WIDTH; x++) {
         for (int y = 0; y < WINDOW_HEIGHT; y++) {
             colorBuffer[WINDOW_WIDTH * y + x] = color;
@@ -452,7 +451,7 @@ void renderColorBuffer() {
         colorBufferTexture,
         NULL,
         colorBuffer,
-        (int)((Uint32)WINDOW_WIDTH * sizeof(Uint32))
+        (int)((uint32_t)WINDOW_WIDTH * sizeof(uint32_t))
     );
     SDL_RenderCopy(renderer, colorBufferTexture, NULL, NULL);
 }
@@ -480,9 +479,9 @@ int main() {
     setup();
 
     while (isGameRunning) {
-	processInput();
-	update();
-	render();
+	    processInput();
+	    update();
+	    render();
     }
 
     destroyWindow();
